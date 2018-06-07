@@ -116,6 +116,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         }
+
     }
 
     public void onSearch(View v) {
@@ -206,10 +207,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             //get gps status, isProviderEnabled returns true if user has enabled gps;
             isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            if (isGPSEnabled) Log.d("GoogleMaps", "getLocation: GPS is enabled");
+            if (isGPSEnabled){
+                Log.d("GoogleMaps", "getLocation: GPS is enabled");
+                Toast.makeText(this, "GPS is Enabled", Toast.LENGTH_SHORT).show();
+            }
 
             isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-            if (isNetworkEnabled) Log.d("GoogleMaps", "getLocation: Network is enabled");
+            if (isNetworkEnabled){
+                Log.d("GoogleMaps", "getLocation: Network is enabled");
+                Toast.makeText(this, "Network is Enabled", Toast.LENGTH_SHORT).show();
+            }
 
             if (!isGPSEnabled && !isNetworkEnabled) {
                 Log.d("GoogleMaps", "getLocation: no provider enabled!");
@@ -338,13 +345,33 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             //                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
             //                        MIN_TIME_BW_UPDATES,
             //                        MIN_DISTANCE_CHANGE_FOR_UPDATES, locationListenerNetwork);
-            switch(status){
-                if(LocationProvider.AVAILABLE == 1)
+
+            switch (status){
+                case LocationProvider.AVAILABLE:
+                    Log.d("GoogleMaps", "onStatusChanged: location provider is available;");
+                    break;
+                case LocationProvider.OUT_OF_SERVICE:
+                    Log.d("GoogleMaps", "onStatusChanged: time to debug! location provider out of service;");
+                    if(ActivityCompat.checkSelfPermission(MapsActivity.this,Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED
+                                            && ActivityCompat.checkSelfPermission(MapsActivity.this,Manifest.permission.ACCESS_COARSE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
+                                        return;
+                                    }
+                                   locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                                            MIN_TIME_BW_UPDATES,
+                                            MIN_DISTANCE_CHANGE_FOR_UPDATES, locationListenerNetwork);
+                    break;
+                case LocationProvider.TEMPORARILY_UNAVAILABLE:
+                    getLocation();
+                    break;
+                default:
+                    getLocation();
+                    break;
+            }
 
             }
 
 
-        }
+
 
 
 
@@ -410,6 +437,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //kick off the location tracker using getLocation to start the LocationListener
         //if(notTrackingMyLocation) {getLocation(); notTrackingMyLocation = false;
         //else {removeUpdate for both both network and gps; notTrackingMyLocation = true;
+        getLocation();
+        if(notTrackingMyLocation) {
+            getLocation();
+            notTrackingMyLocation = false;
+        } else {
+            locationManager.removeUpdates(locationListenerGPS);
+            locationManager.removeUpdates(locationListenerNetwork);
+
+        }
+    }
+
+    public void clearMarkers(View view){
+        mMap.clear();
     }
 
 }
